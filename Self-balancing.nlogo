@@ -85,7 +85,7 @@ end
 to adjust-distancers
 
   let threshold (.05)
-  if ((total-infected / num-people) > (threshold * 2))
+  if ((total-infected / num-people) > (threshold * 2) or (daily-delta > 6))
     [ if (daily-delta > 0)
       ;; let's also say that we need at least 5% of the population NOT distancing.
       [ if (((count turtles with [distanced?] +  (num-people * .1)) < (num-people * .95)))
@@ -329,7 +329,7 @@ num-people
 num-people
 1
 1500
-1196.0
+874.0
 1
 1
 NIL
