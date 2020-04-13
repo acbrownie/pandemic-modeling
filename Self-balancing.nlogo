@@ -1,6 +1,5 @@
 
 
-
 globals [
   max-infected
   cumulative-output
@@ -85,12 +84,12 @@ end
 to adjust-distancers
 
   let threshold (.05)
-  if ((total-infected / num-people) > (threshold * 2) or (daily-delta > 6))
+  if ((total-infected / num-people) > (threshold * 2) or (daily-delta > 5))
     [ if (daily-delta > 0)
       ;; let's also say that we need at least 5% of the population NOT distancing.
-      [ if (((count turtles with [distanced?] +  (num-people * .1)) < (num-people * .95)))
-        [ let new-distanced ((count turtles with [distanced?])+  (num-people * .1))
-            ask n-of new-distanced turtles [
+      [ if (((count turtles with [distanced? and not immune? and not dead?] +  (num-people * distance-step-ups)) < (num-people * .95)) and ((count turtles with [not distanced? and not immune? and not dead?]) > (num-people * distance-step-ups)))
+        [ let new-distanced ((num-people * distance-step-ups))
+          ask n-of new-distanced turtles with [not distanced? and not immune? and not dead?]  [
             set distanced? true
             if (color = black)
             [ set color blue]
@@ -98,17 +97,18 @@ to adjust-distancers
          ]
       ]
      ]
-  if ((total-infected / num-people) < (threshold / 2))
-   [ if (daily-delta < -2)
-      [ let new-distanced ((count turtles with [distanced?]) * .97)
-        let new-not-distanced (num-people - new-distanced)
-            ask n-of new-not-distanced turtles [
-            set distanced? false
+  if ((total-infected / num-people) < (threshold * 1.5))
+   [ if (daily-delta < 0)
+      [ let new-not-distanced (num-people * distance-step-downs)
+        if (new-not-distanced < count turtles with [distanced? and  not immune? and not dead?])[
+        ask n-of new-not-distanced turtles with [distanced? and  not immune? and not dead?] [
+           set distanced? false
            if (color = blue)
             [ set color black]
-            ]
+        ]
+        ]
       ]
-  ]
+    ]
 end
 
 
@@ -250,7 +250,7 @@ to-report prop-dead
 end
 
 to-report prop-distancing
-  report ((count turtles with [distanced?]) / num-people)
+  report ((count turtles with [distanced? and not dead? and not immune?]) / num-people)
 end
 
 
@@ -329,7 +329,7 @@ num-people
 num-people
 1
 1500
-874.0
+447.0
 1
 1
 NIL
@@ -359,7 +359,7 @@ transmissibility
 transmissibility
 0
 1
-0.96
+0.82
 .01
 1
 NIL
@@ -408,15 +408,15 @@ SWITCH
 658
 are-survivors-immune?
 are-survivors-immune?
-0
+1
 1
 -1000
 
 MONITOR
-1380
-338
-1514
-383
+1379
+345
+1513
+390
 NIL
 max-infected-prop
 5
@@ -424,10 +424,10 @@ max-infected-prop
 11
 
 MONITOR
-1255
-389
-1372
-434
+1254
+396
+1371
+441
 NIL
 prop-uninfected
 17
@@ -443,7 +443,7 @@ num-people-distancing
 num-people-distancing
 0
 500
-234.0
+0.0
 1
 1
 NIL
@@ -465,10 +465,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-1260
-334
-1340
-379
+1259
+341
+1339
+386
 NIL
 prop-dead
 17
@@ -476,10 +476,10 @@ prop-dead
 11
 
 MONITOR
-1384
-394
-1781
-439
+1383
+401
+1780
+446
 TOTAL "economic output" (compared to output w/ no disease)
 total-adjusted-output
 17
@@ -505,10 +505,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot calculate-daily-output"
 
 TEXTBOX
-26
-323
-271
-485
+23
+399
+268
+561
 Key:\nBlue = Social Distancers\nWhite = Healthy, non-distancers\nRed = Infected (both distancers and non)\nGrey = Recovered, immune\nPink = Dead
 11
 0.0
@@ -573,7 +573,7 @@ PLOT
 719
 1700
 1013
-Prop distancing
+Prop-distancing
 NIL
 NIL
 0.0
@@ -585,6 +585,36 @@ false
 "" ""
 PENS
 "default" 1.0 0 -13791810 true "" "plot prop-distancing"
+
+SLIDER
+33
+294
+205
+327
+distance-step-ups
+distance-step-ups
+0
+.2
+0.05
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+340
+217
+373
+distance-step-downs
+distance-step-downs
+0
+.5
+0.02
+.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
