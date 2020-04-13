@@ -5,6 +5,12 @@ globals [
   total-infected
   avg-daily-delta
   total-delta
+  moving-average
+  day-1
+  day-2
+  day-3
+  day-4
+  day-5
 ]
 
 
@@ -17,7 +23,7 @@ turtles-own[
 
 to setup
   clear-all
-  set-patch-size (440 / max-pxcor)
+  set-patch-size (350 / max-pxcor)
   setup-turtles
   setup-infected
   setup-distancers
@@ -57,18 +63,11 @@ to go
   ;;stop if everyone or noone is infected
   ;;if (count turtles with [infected? and not dead?] = 0)
   ;;or (count turtles with [infected?] = num-people)
-  reset-timer
+
   infect-susceptibles
-    show (word "part 1 " timer)
-  reset-timer
   recover-infected
-   show (word "part 2 " timer)
-  reset-timer
   death
-   show (word "part 3 " timer)
-  reset-timer
   recolor
-  show (word "part 1 " timer)
   move-normal
   move-distancers
   calculate-max-infected
@@ -77,8 +76,12 @@ to go
   if ticks > 0
   [calculate-avg-daily-delta]
   calculate-total-infected
+  if self-balancing = true[
   adjust-distancers
+  ]
   recolor
+  calculate-moving-average
+
   tick
 
 end
@@ -87,7 +90,7 @@ end
 to adjust-distancers
   let daily-delta-prop (daily-delta / num-people)
 
-  if ((total-infected / num-people) > (threshold * 2) or ((daily-delta-prop) > .005))
+  if ((total-infected / num-people) > (threshold) or ((daily-delta-prop) > .005))
     [ if (daily-delta > 0)
       ;; let's also say that we need at least 5% of the population NOT distancing.
       [ if (((count turtles with [distanced? and not immune? and not dead?] +  (num-people * distance-step-ups)) < (num-people * .95)) and ((count turtles with [not distanced? and not immune? and not dead?]) > (num-people * distance-step-ups)))
@@ -100,7 +103,7 @@ to adjust-distancers
          ]
       ]
      ]
-  if ((total-infected / num-people) < (threshold * 1.5))
+  if ((total-infected / num-people) < (threshold * .75))
    [ if (daily-delta < 0)
       [ let new-not-distanced (num-people * distance-step-downs)
         if (new-not-distanced < count turtles with [distanced? and  not immune? and not dead?])[
@@ -234,6 +237,18 @@ to calculate-avg-daily-delta
   set avg-daily-delta (total-delta / ticks)
 end
 
+to calculate-moving-average
+
+  set day-1 (day-2)
+  set day-2 (day-3)
+  set day-3 (day-4)
+  set day-4 (day-5)
+  set day-5 (daily-delta)
+ if (ticks > 4) [
+  set moving-average ((day-1 + day-2 + day-3 + day-4 + day-5) / 5)
+  ]
+end
+
 
 
 to-report total-adjusted-output
@@ -268,11 +283,11 @@ end
 GRAPHICS-WINDOW
 263
 16
-1156
-910
+974
+728
 -1
 -1
-8.8
+7.0
 1
 10
 1
@@ -335,7 +350,7 @@ num-people
 num-people
 1
 10000
-1140.0
+1773.0
 1
 1
 NIL
@@ -380,17 +395,17 @@ sociability-of-non-distancers
 sociability-of-non-distancers
 0
 10
-7.8
+5.1
 .1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1271
+1074
 10
-1647
-329
+1769
+334
 infection
 time
 proportion infected
@@ -419,10 +434,10 @@ are-survivors-immune?
 -1000
 
 MONITOR
-1379
-345
-1513
-390
+1092
+344
+1226
+389
 NIL
 max-infected-prop
 5
@@ -430,10 +445,10 @@ max-infected-prop
 11
 
 MONITOR
-1254
-396
-1371
-441
+1260
+349
+1377
+394
 NIL
 prop-uninfected
 17
@@ -449,7 +464,7 @@ num-people-distancing
 num-people-distancing
 0
 500
-69.0
+64.0
 1
 1
 NIL
@@ -464,17 +479,17 @@ Sociability-of-Distancers
 Sociability-of-Distancers
 0
 3
-0.3
+0.0
 .1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1259
-341
-1339
-386
+1397
+348
+1477
+393
 NIL
 prop-dead
 17
@@ -482,10 +497,10 @@ prop-dead
 11
 
 MONITOR
-1383
-401
-1780
-446
+1092
+404
+1489
+449
 TOTAL "economic output" (compared to output w/ no disease)
 total-adjusted-output
 17
@@ -493,10 +508,10 @@ total-adjusted-output
 11
 
 PLOT
-1276
-472
-1653
-670
+1091
+458
+1468
+656
 Daily "economic output"
 NIL
 NIL
@@ -521,63 +536,27 @@ Key:\nBlue = Social Distancers\nWhite = Healthy, non-distancers\nRed = Infected 
 1
 
 PLOT
-1817
-111
-2598
-486
-total-infected
-NIL
-NIL
-0.0
-10.0
-0.0
-0.5
-true
-true
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot (total-infected / num-people)"
-
-PLOT
-1822
+1625
 528
-2596
+2399
 945
-daily-delta
+5-day-moving-average-new-cases
 NIL
 NIL
 0.0
 10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -5825686 true "" "plot daily-delta"
-
-PLOT
-1766
-956
-2605
-1232
-avg-daily-dela
-NIL
-NIL
-0.0
-10.0
-0.0
+-10.0
 10.0
 true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot avg-daily-delta"
+"default" 1.0 0 -5825686 true "" "plot moving-average"
 
 PLOT
-1178
+981
 698
-1790
+1593
 992
 Prop-distancing
 NIL
@@ -601,7 +580,7 @@ distance-step-ups
 distance-step-ups
 0
 .2
-0.1
+0.15
 .01
 1
 NIL
@@ -616,26 +595,37 @@ distance-step-downs
 distance-step-downs
 0
 .5
-0.1
+0.19
 .01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-17
-542
-189
-575
+24
+553
+196
+586
 threshold
 threshold
 0
 .25
-0.05
+0.11
 .01
 1
 NIL
 HORIZONTAL
+
+SWITCH
+31
+503
+177
+536
+self-balancing
+self-balancing
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
