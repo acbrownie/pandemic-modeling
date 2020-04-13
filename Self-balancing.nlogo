@@ -1,5 +1,3 @@
-
-
 globals [
   max-infected
   cumulative-output
@@ -19,6 +17,7 @@ turtles-own[
 
 to setup
   clear-all
+  set-patch-size (440 / max-pxcor)
   setup-turtles
   setup-infected
   setup-distancers
@@ -58,11 +57,18 @@ to go
   ;;stop if everyone or noone is infected
   ;;if (count turtles with [infected? and not dead?] = 0)
   ;;or (count turtles with [infected?] = num-people)
-
+  reset-timer
   infect-susceptibles
+    show (word "part 1 " timer)
+  reset-timer
   recover-infected
+   show (word "part 2 " timer)
+  reset-timer
   death
+   show (word "part 3 " timer)
+  reset-timer
   recolor
+  show (word "part 1 " timer)
   move-normal
   move-distancers
   calculate-max-infected
@@ -73,18 +79,15 @@ to go
   calculate-total-infected
   adjust-distancers
   recolor
-
   tick
-
-
 
 end
 
 
 to adjust-distancers
+  let daily-delta-prop (daily-delta / num-people)
 
-  let threshold (.05)
-  if ((total-infected / num-people) > (threshold * 2) or (daily-delta > 5))
+  if ((total-infected / num-people) > (threshold * 2) or ((daily-delta-prop) > .005))
     [ if (daily-delta > 0)
       ;; let's also say that we need at least 5% of the population NOT distancing.
       [ if (((count turtles with [distanced? and not immune? and not dead?] +  (num-people * distance-step-ups)) < (num-people * .95)) and ((count turtles with [not distanced? and not immune? and not dead?]) > (num-people * distance-step-ups)))
@@ -116,11 +119,14 @@ end
 
 
 to infect-susceptibles ;; S -> I
-  ask turtles [
-    let infected-neighbors (count other turtles with [color = red] in-radius 2)
-    if (random-float 1 <  1 - (((1 - transmissibility) ^ infected-neighbors)) and not immune?)
+   ask turtles with [not infected? and not immune?][
+     let infected-neighbors (count turtles-here with [infected?])
+    if (random-float 1 <  1 - (((1 - transmissibility) ^ infected-neighbors)))
     [set infected? true]
-  ]
+   ;let infected-neighbors (count other turtles with [infected?] in-radius 1)
+  ; if (random-float 1 <  1 - (((1 - transmissibility) ^ infected-neighbors)) and not immune?)
+   ;[set infected? true]
+]
 end
 
 to recolor
@@ -141,7 +147,7 @@ to move-normal
 
   ask turtles with [not dead? and not distanced?] [
     right random 360 ;;get a new random heading
-    forward  sociability-of-non-distancers
+    forward random sociability-of-non-distancers
   ]
 
 end
@@ -149,7 +155,7 @@ end
 to move-distancers
   ask turtles with [distanced? and not dead?][
     right random 360
-    forward Sociability-of-Distancers
+    forward random Sociability-of-Distancers
   ]
   ask turtles with [dead?][
 
@@ -260,13 +266,13 @@ to-report prop-uninfected
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-257
-10
-1025
-779
+263
+16
+1156
+910
 -1
 -1
-5.033113
+8.8
 1
 10
 1
@@ -276,14 +282,14 @@ GRAPHICS-WINDOW
 1
 1
 1
--75
-75
--75
-75
-0
-0
+-50
+50
+-50
+50
 1
-ticks
+1
+1
+days
 30.0
 
 BUTTON
@@ -328,8 +334,8 @@ SLIDER
 num-people
 num-people
 1
-1500
-447.0
+10000
+1140.0
 1
 1
 NIL
@@ -344,7 +350,7 @@ init-infected
 init-infected
 1
 20
-10.0
+5.0
 1
 1
 NIL
@@ -359,7 +365,7 @@ transmissibility
 transmissibility
 0
 1
-0.82
+1.0
 .01
 1
 NIL
@@ -373,8 +379,8 @@ SLIDER
 sociability-of-non-distancers
 sociability-of-non-distancers
 0
-3
-2.6
+10
+7.8
 .1
 1
 NIL
@@ -408,7 +414,7 @@ SWITCH
 658
 are-survivors-immune?
 are-survivors-immune?
-1
+0
 1
 -1000
 
@@ -443,7 +449,7 @@ num-people-distancing
 num-people-distancing
 0
 500
-0.0
+69.0
 1
 1
 NIL
@@ -458,7 +464,7 @@ Sociability-of-Distancers
 Sociability-of-Distancers
 0
 3
-0.0
+0.3
 .1
 1
 NIL
@@ -569,10 +575,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot avg-daily-delta"
 
 PLOT
-1088
-719
-1700
-1013
+1178
+698
+1790
+992
 Prop-distancing
 NIL
 NIL
@@ -595,7 +601,7 @@ distance-step-ups
 distance-step-ups
 0
 .2
-0.05
+0.1
 .01
 1
 NIL
@@ -610,7 +616,22 @@ distance-step-downs
 distance-step-downs
 0
 .5
-0.02
+0.1
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+17
+542
+189
+575
+threshold
+threshold
+0
+.25
+0.05
 .01
 1
 NIL
@@ -1000,6 +1021,42 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="360"/>
+    <exitCondition>count turtles with [infected? and not dead?] = 0</exitCondition>
+    <metric>(count turtles with [infected? and not dead?] / num-people)</metric>
+    <metric>count turtles with [distanced? and not dead?]</metric>
+    <metric>count turtles with [dead?]</metric>
+    <enumeratedValueSet variable="num-people-distancing">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="transmissibility">
+      <value value="0.82"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Sociability-of-Distancers">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-step-ups">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="init-infected">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-step-downs">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="are-survivors-immune?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sociability-of-non-distancers">
+      <value value="2.6"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="num-people" first="500" step="100" last="1000"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
